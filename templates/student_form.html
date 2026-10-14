@@ -1,0 +1,19 @@
+{% extends "base.html" %}
+{% block title %}{{ page_title }} · Student Management{% endblock %}
+{% block content %}
+<section class="page-heading"><div><p class="eyebrow">STUDENT RECORD</p><h1>{{ page_title }}</h1><p class="muted">Enter details and marks from 0 to 100.</p></div></section>
+<section class="panel form-panel">
+  <form method="post" class="student-form">
+    <div class="form-grid">
+      <div class="field"><label for="roll_number">Roll number *</label><input id="roll_number" name="roll_number" required maxlength="30" value="{{ student.get('roll_number', '') }}"></div>
+      <div class="field"><label for="name">Student name *</label><input id="name" name="name" required maxlength="100" value="{{ student.get('name', '') }}"></div>
+      <div class="field"><label for="course">Course / stream *</label><input id="course" name="course" required maxlength="100" value="{{ student.get('course', '') }}" placeholder="e.g. Computer Science"></div>
+      <div class="field"><label for="mark1">Subject 1 marks *</label><input id="mark1" name="mark1" type="number" min="0" max="100" step="0.01" required value="{{ student.get('mark1', '') }}"></div>
+      <div class="field"><label for="mark2">Subject 2 marks *</label><input id="mark2" name="mark2" type="number" min="0" max="100" step="0.01" required value="{{ student.get('mark2', '') }}"></div>
+      <div class="field"><label for="mark3">Subject 3 marks *</label><input id="mark3" name="mark3" type="number" min="0" max="100" step="0.01" required value="{{ student.get('mark3', '') }}"></div>
+    </div>
+    <p class="hint">The total, average and grade are calculated automatically from the three marks.</p>
+    <div class="form-actions"><a class="button secondary" href="{{ url_for('dashboard') }}">Cancel</a><button class="button" type="submit">Save student</button></div>
+  </form>
+</section>
+{% endblock %}
