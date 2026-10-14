@@ -1,173 +1,194 @@
-# Advanced Student Management System
+# Student Management System
 
-A beginner-friendly student-record web application built with Python, Flask, SQLite, HTML and CSS.
+## Project Overview
 
-# Project Overview
+The Student Management System is a web-based application developed using Python, Flask, and SQLite. It helps users manage student records and academic marks through a simple and user-friendly interface.
 
-The Student Management System is a web-based application developed using Python, Flask, SQLite, HTML, and CSS. It helps users manage student records through a simple and user-friendly interface.
+The application allows users to add, view, search, edit, and delete student records. It also calculates the total marks, average percentage, and grade based on the student's marks in three subjects.
 
-The application allows users to add, view, search, update, and delete student information. It demonstrates the practical use of Python programming, web development, database management, and CRUD operations.
+## Objectives
 
-# Objectives
-
-Develop a simple web application for managing student records.
-
-Implement CRUD operations using Python and SQLite.
-
-Use Flask to connect the frontend with the backend.
-
-Store student information in a database.
-
-Practise input validation, problem-solving, and application testing.
+- Manage student information efficiently.
+- Store student records in an SQLite database.
+- Calculate total marks, average, and grades automatically.
+- Validate student details and marks before saving.
+- Provide search functionality to find student records easily.
 
 ## Technologies Used
 
-- Python: Application logic and backend programming.
-
-- Flask: Web application framework.
-
-- SQLite: Database for storing student records.
-
-- HTML: Structure of web pages.
-
-- CSS: Styling and layout of the website.
-
-- Visual Studio Code: Code editor and development environment.
-
+- **Python:** Application logic and calculations.
+- **Flask:** Web application framework.
+- **SQLite:** Database for storing student records.
+- **HTML:** Structure of the web pages.
+- **CSS:** Styling and layout.
+- **Visual Studio Code:** Code editor.
+- **GitHub:** Project hosting and version control.
 
 ## Features
-- Add, view, search, edit and delete student records
-- SQLite database keeps records after the app restarts
-- Validates required fields and marks (0–100)
-- Prevents duplicate roll numbers
-- Calculates totals, averages and grades
-- Dashboard displays total students and overall average
-- Responsive layout for desktop and mobile browsers
 
-## Project Folder Structure
+### 1. Add Student
+Add a new student by entering the student number, name, course or stream, and marks in three subjects.
 
-StudentManagement/
+### 2. View Student Records
+Display saved student information and academic results on the dashboard.
+
+### 3. Search Students
+Search student records using the available search functionality.
+
+### 4. Edit Student Details
+Update existing student information and marks.
+
+### 5. Delete Student Records
+Remove student records when they are no longer required.
+
+### 6. Automatic Result Calculation
+The application calculates total marks, average marks, and grades automatically.
+
+### 7. Input Validation
+Validate required fields, student numbers, and marks to help prevent invalid records.
+
+### 8. Database Storage
+Store student information in an SQLite database so records remain available after restarting the application.
+
+## Grade Calculation
+
+The application calculates the average from three subject marks and assigns a grade using the following rules:
+
+| Average Marks | Grade |
+|---|---|
+| 90–100 | A+ |
+| 80–89.99 | A |
+| 70–79.99 | B |
+| 60–69.99 | C |
+| 50–59.99 | D |
+| Below 50 | F |
+
+**Formula:**
+
+Total Marks = Subject 1 + Subject 2 + Subject 3
+
+Average Marks = Total Marks / 3
+
+## Project Structure
+
+```text
+student-management-system/
 │
 ├── app.py
-├── students.db
-├── requirements.txt
 ├── README.md
-├
+├── requirements.txt
+├── .gitignore
+├── students.db
 │
 ├── templates/
+│   ├── base.html
 │   ├── index.html
-│   └── other HTML files
+│   └── student_form.html
 │
-└── static/
-    └── style.css
+├── static/
+│   └── style.css
+│
+└── tests/
+    └── test_result.py
+```
 
-## Requirements
-- Python 3.9 or newer
-- Internet connection for the initial Flask installation
+## Installation and Setup
 
-## Run on Windows
-1. Open this folder in VS Code.
-2. Open Terminal → New Terminal.
-3. Create a virtual environment:
-   ```powershell
-   py -m venv .venv
-   ```
-4. Activate it:
-   ```powershell
-   .venv\Scripts\activate
-   ```
-5. Install dependencies:
-   ```powershell
-   python -m pip install -r requirements.txt
-   ```
-6. Start the app:
-   ```powershell
-   python app.py
-   ```
-7. Open http://127.0.0.1:5000 in your browser.
-8. Press Ctrl+C in the terminal to stop the server.
+### Prerequisites
+
+Install the following software:
+
+- Python
+- Visual Studio Code
+- A web browser
+
+SQLite is included with Python, so a separate database server is not required.
+
+### Step 1: Clone the Repository
+
+```bash
+git clone https://github.com/turlapatigayathri/student-management-system.git
+```
+
+### Step 2: Open the Project Folder
+
+```bash
+cd student-management-system
+```
+
+### Step 3: Create a Virtual Environment (Recommended)
+
+```bash
+python -m venv venv
+```
+
+Activate it on Windows:
+
+```bash
+venv\Scripts\activate
+```
+
+### Step 4: Install Dependencies
+
+```bash
+python -m pip install -r requirements.txt
+```
+
+### Step 5: Run the Application
+
+```bash
+python app.py
+```
+
+### Step 6: Open the Application
+
+Open your browser and visit:
+
+http://127.0.0.1:5000
+
+You can now add and manage student records.
 
 ## Database
-On first run, the application creates `students.db` automatically in the project folder. It is excluded from Git by `.gitignore`, so real or test records are not uploaded. The database can be recreated by running the app again.
 
-## Grade scale
-- 90 and above: A+
-- 80–89.99: A
-- 70–79.99: B
-- 60–69.99: C
-- 50–59.99: D
-- Below 50: F
+The application uses SQLite to store student information, including:
 
-# Testing
+- Student ID
+- Student number
+- Student name
+- Course 
+- Marks in three subjects
+- Average
 
-- The following tests can be performed:
+The database table is created automatically by the application when it starts, if it does not already exist.
 
-- Add a student with valid details.
+## Learning Outcomes
 
-- Verify that the student appears in the list.
-
-- Search for an existing student.
-
-- Update a student's marks or other details.
-
-- Delete a test record and verify its removal.
-
-- Try submitting invalid or incomplete information.
-
-- Restart the application and verify that saved records remain available.
-
-# Learning Outcomes
-
-- Through this project, I am developing practical knowledge of:
+Through this project, I practised:
 
 - Python programming and functions.
+- Developing web applications using Flask.
+- Designing and querying an SQLite database.
+- Performing CRUD operations (Create, Read, Update, and Delete).
+- Validating user input.
+- Using HTML templates and CSS.
+- Organising a Python project into separate files.
+- Hosting project source code on GitHub.
 
-- Web application development using Flask.
+## Future Enhancements
 
-- HTML forms and CSS styling.
+- User authentication and role-based access.
+- Export student results to CSV or PDF.
+- Add charts to analyse student performance.
+- Improve dashboard reporting.
+- Add automated tests for application routes and database operations.
 
-- Database operations using SQLite.
+## Author
 
-- CRUD operations and data persistence.
+**Gayathri**
 
-- Input validation and error handling.
+GitHub Repository:  
+https://github.com/turlapatigayathri/student-management-system
 
-- Debugging and testing a software application.
+## Disclaimer
 
-- Organizing code into files and folders.
-
-# Future Enhancements
-
-- Possible future improvements include:
-
-- User authentication and secure login.
-
-- Student performance analytics and visual charts.
-
-- Exporting student records to CSV.
-
-- Improved form validation and error messages.
-
-- Pagination for large student lists.
-
-- Unit tests for database and application functions.
-
-- Responsive design for mobile devices.
-
-- Deployment to a hosting platform.
-
-# Conclusion
-
-The Student Management System is a practical beginner-level web development project that demonstrates how Python, Flask, and SQLite can work together to manage structured data.
-
-It provides hands-on experience with backend programming, database operations, user interfaces, and software testing. The project can be extended with additional features as programming and computer science knowledge improves.
-
-# Author: T.Gayathri
-
-Project Name: Student Management System
-Programming Language: Python
-Framework: Flask
-Database: SQLite
-Development Environment: Visual Studio Code
-
-This project is intended for educational purposes and continued improvement.
+This project was developed for educational and learning purposes. The application is intended to demonstrate basic student record management, web development, database operations, and academic result calculations.
