@@ -1,26 +1,32 @@
+
 from pathlib import Path
 import sqlite3
-from flask import Flask, render_template, request, redirect, url_for, flash, abort
+from flask import (
+    Flask,
+    render_template,
+    request,
+    redirect,
+    url_for,
+    flash,
+    abort,
+)
 
 BASE_DIR = Path(__file__).resolve().parent
 DATABASE = BASE_DIR / "students.db"
 
 app = Flask(__name__)
-# Used only for local development. Change this before any public deployment.
-app.config["SECRET_KEY"] = "change-this-development-key"
+app.secret_key = "change-this-to-a-random-secret-key"
 
 
 def get_db_connection():
-    """Open a database connection and return rows by column name."""
-    connection = sqlite3.connect(DATABASE)
-    connection.row_factory = sqlite3.Row
-    return connection
+    conn = sqlite3.connect(DATABASE)
+    conn.row_factory = sqlite3.Row
+    return conn
 
 
 def init_db():
-    """Create the students table if it does not already exist."""
-    with get_db_connection() as connection:
-        connection.execute("""
+    with get_db_connection() as conn:
+        conn.execute("""
             CREATE TABLE IF NOT EXISTS students (
                 id INTEGER PRIMARY KEY AUTOINCREMENT,
                 roll_number TEXT NOT NULL UNIQUE,
@@ -35,9 +41,9 @@ def init_db():
 
 
 def calculate_results(mark1, mark2, mark3):
-    """Return total, average and grade from three marks."""
     total = mark1 + mark2 + mark3
-    average = total / 3
+    average = round(total / 3, 2)
+
     if average >= 90:
         grade = "A+"
     elif average >= 80:
@@ -50,160 +56,239 @@ def calculate_results(mark1, mark2, mark3):
         grade = "D"
     else:
         grade = "F"
-    return total, round(average, 2), grade
+
+    return total, average, grade
 
 
 def validate_student_form(form):
-    """Validate submitted form fields; return cleaned values or an error."""
     roll_number = form.get("roll_number", "").strip()
     name = form.get("name", "").strip()
     course = form.get("course", "").strip()
 
     if not roll_number or not name or not course:
-        return None, "Roll number, name and course are required."
+        return None, "Student number, student name and course are required."
+
+    if not roll_number.isascii() or not roll_number.isdigit():
+        return None, "Student number must contain digits only, for example 101."
+
+    if int(roll_number) < 1:
+        return None, "Student number must be greater than zero."
+
+    if not any(char.isalpha() for char in name):
+        return None, "Please enter a valid student name."
+
+    if not all(
+        char.isalpha() or char.isspace() or char in " .'-"
+        for char in name
+    ):
+        return None, "Name can contain letters, spaces, periods, apostrophes and hyphens only."
 
     try:
-        marks = [float(form.get(key, "")) for key in ("mark1", "mark2", "mark3")]
+        marks = [
+            float(form.get("mark1", "")),
+            float(form.get("mark2", "")),
+            float(form.get("mark3", "")),
+        ]
     except (TypeError, ValueError):
-        return None, "Enter a valid number for each mark."
+        return None, "Please enter valid marks for all three subjects."
 
-    if any(mark < 0 or mark > 100 for mark in marks):
-        return None, "Each mark must be between 0 and 100."
+    if any(not 0 <= mark <= 100 for mark in marks):
+        return None, "Each subject mark must be between 0 and 100."
 
-    return {
+    student = {
         "roll_number": roll_number,
         "name": name,
         "course": course,
         "mark1": marks[0],
         "mark2": marks[1],
         "mark3": marks[2],
-    }, None
+    }
 
+    return student, None
 
-def add_calculated_fields(student):
-    """Add total, average and grade to a database row for display."""
-    result = dict(student)
-    result["total"], result["average"], result["grade"] = calculate_results(
-        result["mark1"], result["mark2"], result["mark3"]
-    )
-    return result
 
 
 @app.route("/")
 def dashboard():
-    search = request.args.get("q", "").strip()
-    with get_db_connection() as connection:
-        if search:
-            rows = connection.execute(
-                """SELECT * FROM students
-                   WHERE roll_number LIKE ? OR name LIKE ? OR course LIKE ?
-                   ORDER BY name COLLATE NOCASE""",
-                (f"%{search}%", f"%{search}%", f"%{search}%"),
-            ).fetchall()
+    search_query = request.args.get("q", "").strip()
+
+    with get_db_connection() as conn:
+        if search_query:
+            students = conn.execute("""
+                SELECT * FROM students
+                WHERE roll_number LIKE ?
+                   OR name LIKE ?
+                   OR course LIKE ?
+                ORDER BY id DESC
+            """, (
+                f"%{search_query}%",
+                f"%{search_query}%",
+                f"%{search_query}%",
+            )).fetchall()
         else:
-            rows = connection.execute(
-                "SELECT * FROM students ORDER BY name COLLATE NOCASE"
-            ).fetchall()
+            students = conn.execute("""
+                SELECT * FROM students
+                ORDER BY id DESC
+            """).fetchall()
 
-        total_students = connection.execute(
-            "SELECT COUNT(*) FROM students"
-        ).fetchone()[0]
-        average_row = connection.execute(
-            "SELECT AVG((mark1 + mark2 + mark3) / 3.0) FROM students"
-        ).fetchone()[0]
+    student_list = []
+    total_marks_all = 0
+    overall_average = 0
 
-    students = [add_calculated_fields(row) for row in rows]
+    for student in students:
+        total, average, grade = calculate_results(
+            student["mark1"],
+            student["mark2"],
+            student["mark3"],
+        )
+
+        item = dict(student)
+        item["total"] = total
+        item["average"] = average
+        item["grade"] = grade
+
+        student_list.append(item)
+        total_marks_all += total
+
+    if student_list:
+        overall_average = round(
+            total_marks_all / (len(student_list) * 3), 2
+        )
+
     return render_template(
         "index.html",
-        students=students,
-        search=search,
-        total_students=total_students,
-        overall_average=round(average_row, 2) if average_row is not None else None,
+        students=student_list,
+        q=search_query,
+        overall_average=overall_average,
     )
+
 
 
 @app.route("/add", methods=["GET", "POST"])
 def add_student():
+    student = {
+        "roll_number": "",
+        "name": "",
+        "course": "",
+        "mark1": "",
+        "mark2": "",
+        "mark3": "",
+    }
+
     if request.method == "POST":
         student, error = validate_student_form(request.form)
+
         if error:
             flash(error, "error")
-            return render_template("student_form.html", page_title="Add Student", student=request.form)
+            return render_template(
+                "student_form.html",
+                page_title="Add Student",
+                student=student or request.form,
+            )
 
         try:
-            with get_db_connection() as connection:
-                connection.execute(
-                    """INSERT INTO students
-                       (roll_number, name, course, mark1, mark2, mark3)
-                       VALUES (?, ?, ?, ?, ?, ?)""",
-                    (
-                        student["roll_number"], student["name"], student["course"],
-                        student["mark1"], student["mark2"], student["mark3"],
-                    ),
-                )
+            with get_db_connection() as conn:
+                conn.execute("""
+                    INSERT INTO students
+                    (roll_number, name, course, mark1, mark2, mark3)
+                    VALUES (?, ?, ?, ?, ?, ?)
+                """, (
+                    student["roll_number"],
+                    student["name"],
+                    student["course"],
+                    student["mark1"],
+                    student["mark2"],
+                    student["mark3"],
+                ))
         except sqlite3.IntegrityError:
-            flash("That roll number already exists. Use a unique roll number.", "error")
-            return render_template("student_form.html", page_title="Add Student", student=request.form)
+            flash("That student number already exists.", "error")
+            return render_template(
+                "student_form.html",
+                page_title="Add Student",
+                student=student,
+            )
 
         flash("Student added successfully.", "success")
         return redirect(url_for("dashboard"))
 
-    return render_template("student_form.html", page_title="Add Student", student={})
+    return render_template(
+        "student_form.html",
+        page_title="Add Student",
+        student=student,
+    )
 
 
 @app.route("/edit/<int:student_id>", methods=["GET", "POST"])
 def edit_student(student_id):
-    with get_db_connection() as connection:
-        row = connection.execute(
-            "SELECT * FROM students WHERE id = ?", (student_id,)
+    with get_db_connection() as conn:
+        record = conn.execute(
+            "SELECT * FROM students WHERE id = ?",
+            (student_id,),
         ).fetchone()
-    if row is None:
+
+    if record is None:
         abort(404)
+
+    student = dict(record)
 
     if request.method == "POST":
         student, error = validate_student_form(request.form)
+
         if error:
             flash(error, "error")
-            return render_template("student_form.html", page_title="Edit Student", student=request.form)
+            return render_template(
+                "student_form.html",
+                page_title="Edit Student",
+                student=student or request.form,
+            )
 
         try:
-            with get_db_connection() as connection:
-                connection.execute(
-                    """UPDATE students
-                       SET roll_number = ?, name = ?, course = ?, mark1 = ?, mark2 = ?, mark3 = ?
-                       WHERE id = ?""",
-                    (
-                        student["roll_number"], student["name"], student["course"],
-                        student["mark1"], student["mark2"], student["mark3"], student_id,
-                    ),
-                )
+            with get_db_connection() as conn:
+                conn.execute("""
+                    UPDATE students
+                    SET roll_number = ?, name = ?, course = ?,
+                        mark1 = ?, mark2 = ?, mark3 = ?
+                    WHERE id = ?
+                """, (
+                    student["roll_number"],
+                    student["name"],
+                    student["course"],
+                    student["mark1"],
+                    student["mark2"],
+                    student["mark3"],
+                    student_id,
+                ))
         except sqlite3.IntegrityError:
-            flash("That roll number is already assigned to another student.", "error")
-            return render_template("student_form.html", page_title="Edit Student", student=request.form)
+            flash("That student number already exists.", "error")
+            return render_template(
+                "student_form.html",
+                page_title="Edit Student",
+                student=student,
+            )
 
         flash("Student updated successfully.", "success")
         return redirect(url_for("dashboard"))
 
-    return render_template("student_form.html", page_title="Edit Student", student=dict(row))
+    return render_template(
+        "student_form.html",
+        page_title="Edit Student",
+        student=student,
+    )
 
 
 @app.route("/delete/<int:student_id>", methods=["POST"])
 def delete_student(student_id):
-    with get_db_connection() as connection:
-        cursor = connection.execute("DELETE FROM students WHERE id = ?", (student_id,))
-    if cursor.rowcount == 0:
-        abort(404)
+    with get_db_connection() as conn:
+        conn.execute(
+            "DELETE FROM students WHERE id = ?",
+            (student_id,),
+        )
+
     flash("Student deleted successfully.", "success")
     return redirect(url_for("dashboard"))
-
-
-@app.errorhandler(404)
-def not_found(_error):
-    return render_template("404.html"), 404
 
 
 init_db()
 
 if __name__ == "__main__":
-    # Local development only; do not expose Flask's debug server to the internet.
     app.run(debug=True)
